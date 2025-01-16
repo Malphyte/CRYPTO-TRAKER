@@ -1,15 +1,31 @@
 import React, { useEffect } from 'react';
 import { AppstoreOutlined, MailOutlined, SettingOutlined } from '@ant-design/icons';
-import { Menu, Card } from 'antd';
+import { Menu, Card, Spin } from 'antd';
 import axios from 'axios';
 import { useState } from 'react';
 
-
+function toShortFormatNumber(number) {
+  return number.toLocaleString('en-US', {
+    maximumFractionDigits: 2,
+    notation: 'compact',
+    compactDisplay: 'short'
+  });
+}
 
 const App = () => {
   const [currencies, setCurrencies] = useState([]);
   const [currencyId, setCurrencyId] = useState(1);
   const [currencyData, setCurrencyData] = useState(null);
+
+  const ColoredPercentText = () => {
+    if(currencyData){
+      return currencyData.quote.USD.percent_change_24h>=0?
+        <span className="text-lime-400">{currencyData.quote.USD.percent_change_24h.toFixed(2)}%</span>:
+        <span className="text-red-600">{currencyData.quote.USD.percent_change_24h.toFixed(2)}%</span>
+    } else {
+      return "-";
+    }
+  }
 
   const fetchCurrencies = () => {
     axios.get("http://127.0.0.1:8000/cmc_api/cyrrencies").then(responce => {
@@ -31,6 +47,7 @@ const App = () => {
   const fetchCurrency = () => {
     axios.get(`http://127.0.0.1:8000/cmc_api/cyrrency/${currencyId}`).then(responce => {
       setCurrencyData(responce.data);
+      console.log(responce.data);
     })
   };
 
@@ -39,6 +56,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    setCurrencyData(null);
     fetchCurrency();
   }, [currencyId]);
 
@@ -60,21 +78,22 @@ const App = () => {
       className='h-screen overflow-scroll'
       />
       <div className='mx-auto my-auto'>
-        <Card
+        {currencyData?<Card
           title={
-            <div>
-              <img src={`https://s2.coinmarketcap.com/static/img/coins/64x64/${currencyData.key}.png`}/>
-              <span>{currencyData.name}</span>
+            <div className="flex justify-start items-center gap-3 m-1 p-4">
+              <img className=""
+               src={`https://s2.coinmarketcap.com/static/img/coins/64x64/${currencyId}.png`}/>
+              <span>{currencyData?currencyData.name:"-"} ({currencyData?currencyData.symbol:"-"})</span>
             </div>}
           extra={<a href="#">More</a>}
           style={{
-            width: 300,
+            width: 400,
           }}
         >
-          <p>Card content</p>
-          <p>Card content</p>
-          <p>Card content</p>
-        </Card>
+          <p>Price: {currencyData?currencyData.quote.USD.price.toFixed(2):"-"}$</p>
+          <p>Percent Change 24h: <ColoredPercentText/></p>
+          <p>Market Cap: {currencyData?toShortFormatNumber(currencyData.quote.USD.market_cap):"-"}</p>
+        </Card>:<Spin size="large"/>}
       </div>
     </div>
   );
