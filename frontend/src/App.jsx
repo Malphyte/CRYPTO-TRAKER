@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { AppstoreOutlined, MailOutlined, SettingOutlined } from '@ant-design/icons';
-import { Menu, Card, Spin } from 'antd';
+import { Menu, Card, Spin, Input } from 'antd';
 import axios from 'axios';
 import { useState } from 'react';
 
@@ -14,6 +14,8 @@ function toShortFormatNumber(number) {
 
 const App = () => {
   const [currencies, setCurrencies] = useState([]);
+  const [filteredCurrencies, setFilteredCurrencies] = useState([]);
+  const [searchValue, setSearchValue] = useState("");
   const [currencyId, setCurrencyId] = useState(1);
   const [currencyData, setCurrencyData] = useState(null);
 
@@ -29,30 +31,42 @@ const App = () => {
 
   const fetchCurrencies = () => {
     axios.get("http://127.0.0.1:8000/cmc_api/cyrrencies").then(responce => {
-      const currenciesResponce = responce.data;
-      const items = [
-        {
-          key: 'g1',
-          label: 'Криптовалюты',
-          type: 'group',
-          children: currenciesResponce.map(c => {
-            return {key: c.id, label: c.name}
-          }),
-        },
-      ];
-      setCurrencies(items);
+      const currenciesResponce = responce.data.map(c => {
+        return {key: c.id, label: c.name}
+      })
+      setCurrencies(currenciesResponce);
+      setFilteredCurrencies(currenciesResponce);
     })
   };
 
   const fetchCurrency = () => {
     axios.get(`http://127.0.0.1:8000/cmc_api/cyrrency/${currencyId}`).then(responce => {
       setCurrencyData(responce.data);
-      console.log(responce.data);
     })
   };
 
+  const filterCurrencies = () => {
+    let items = [
+      {
+        key: 'g1',
+        label: 'Crypto Currencies',
+        type: 'group',
+        children: currencies,
+      },
+    ];
+    if (searchValue === "") { setFilteredCurrencies(items); return; }
+
+    const filterBySearch = currencies.filter((item) => {
+      if (item.label.toLowerCase().includes(searchValue.toLowerCase())) 
+        { return item; }
+    });
+    items[0]["children"] = filterBySearch;
+    
+    setFilteredCurrencies(items);
+  };
+
   useEffect(() => {
-    fetchCurrencies();
+    fetchCurrencies().then(() => console.log("Then"));
   }, []);
 
   useEffect(() => {
@@ -60,12 +74,23 @@ const App = () => {
     fetchCurrency();
   }, [currencyId]);
 
+
+  useEffect(() => {
+    filterCurrencies();
+  }, [searchValue]);
+
   const onClick = (e) => {
     setCurrencyId(e.key);
   };
 
+  const onChange = (e) => {
+    setSearchValue(e.target.value);
+  };
+
   return (
     <div className='flex'>
+    <div>
+      <Input placeholder="Search..." onChange={onChange}/>
       <Menu
       onClick={onClick}
       style={{
@@ -74,9 +99,10 @@ const App = () => {
       defaultSelectedKeys={['1']}
       defaultOpenKeys={['sub1']}
       mode="inline"
-      items={currencies}
+      items={filteredCurrencies}
       className='h-screen overflow-scroll'
       />
+    </div>
       <div className='mx-auto my-auto'>
         {currencyData?<Card
           title={
