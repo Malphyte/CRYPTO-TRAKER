@@ -3,6 +3,7 @@ import { AppstoreOutlined, MailOutlined, SettingOutlined } from '@ant-design/ico
 import { Menu, Card, Spin, Input } from 'antd';
 import axios from 'axios';
 import { useState } from 'react';
+import { Link } from 'react-router-dom'; 
 
 function toShortFormatNumber(number) {
   return number.toLocaleString('en-US', {
@@ -32,7 +33,7 @@ const App = () => {
   const fetchCurrencies = () => {
     axios.get("http://127.0.0.1:8000/cmc_api/cyrrencies").then(responce => {
       const currenciesResponce = responce.data.map(c => {
-        return {key: c.id, label: c.name}
+        return {key: c.id, label: c.name, symbol: c.symbol}
       })
       setCurrencies(currenciesResponce);
       setFilteredCurrencies(currenciesResponce);
@@ -66,7 +67,7 @@ const App = () => {
   };
 
   useEffect(() => {
-    fetchCurrencies().then(() => console.log("Then"));
+    fetchCurrencies();
   }, []);
 
   useEffect(() => {
@@ -111,7 +112,10 @@ const App = () => {
                src={`https://s2.coinmarketcap.com/static/img/coins/64x64/${currencyId}.png`}/>
               <span>{currencyData?currencyData.name:"-"} ({currencyData?currencyData.symbol:"-"})</span>
             </div>}
-          extra={<a href="#">More</a>}
+          extra={<Link 
+            key={currencyData?currencyData.symbol:"-"} 
+            to={`/${currencyData?currencyData.id:""}`}>More</Link>
+          }
           style={{
             width: 400,
           }}
